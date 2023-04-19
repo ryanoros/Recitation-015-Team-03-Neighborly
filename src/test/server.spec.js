@@ -28,7 +28,7 @@ describe('Server!', () => {
   it('This is the Login Test', done => {
     chai
       .request(server)
-      .post('/login',{udername: 'warren', password: 'abcd1234'})
+      .post('/login',{udername: 'evan', password: 'abcd1234'})
       .end((err, res) => {
         console.log("dfsjkndsdlgsldkjfjasdflskdjfn", res.status);
         expect(res).to.have.status(200);
