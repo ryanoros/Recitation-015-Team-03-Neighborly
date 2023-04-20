@@ -69,78 +69,99 @@ app.use(
 // TODO - Include your API routes here
 
 app.get('/welcome', (req, res) => {
-    res.json({status: 'success', message: 'Welcome!'});
-  });
-
-// TODO - Login and Register
-
-
-app.get('/', (req, res) => {
-  res.redirect('/explore');
+  res.json({status: 'success', message: 'Welcome!'});
 });
 
-app.get('/explore', (req, res) => {
-  res.render('pages/explore',{});
+// TODO - Login and Register
+app.get('/', (req, res) => {
+  //return res.redirect('/login');
+  res.json({status: 'success', message: 'Redirecting to the login page.'})
+});
+
+app.get("/login", (req, res) => {
+  //return res.render("pages/login");
+  res.json({status: 'success', message: 'Login page successful'})
 });
 
 app.get('/register', (req, res) => {
-  res.render('pages/register',{});
+  return res.render('pages/register');
 });
 
 // Register
+/*
 app.post('/register', async (req, res) => {
   //hash the password using bcrypt library
   const hash = await bcrypt.hash(req.body.password, 10);
-
   // To-DO: Insert username and hashed password into 'users' table
   if (hash.err || req.body.username === "" || req.body.password === "" || req.body.email === ""){
-    res.redirect('/register');
+    //res.redirect('/register');
+    res.status(200).json({ message: 'Invalid input'})
   }
   else{
       var query = `INSERT INTO users(username, password, email) VALUES ('${req.body.username}', '${hash}', '${req.body.email}');`;
       
       db.any(query)
       .then(function (data) {
-        res.redirect('/login');
+        res.status(200).json({ message: 'Success'})
+        //res.redirect('/login');
       })
       .catch(function (err) {
-        console.log(err);
-          res.render('pages/register',{});
+        res.status(200).json({ message: 'Invalid input'})
+        //res.render('pages/register',{});
       });
   }
 });
+*/
 
-app.get('/login', (req, res) => {
-  // res.json({status: 'success', message: 'Works!'});
-  res.render('pages/login',{});
+app.post("/register", async (req, res) => {
+  const username = req.body.username;
+  const hash = await bcrypt.hash(req.body.password, 10);
+  const email = req.body.email;
+  const query = "INSERT INTO users (username, password, email) VALUES ($1, $2, $3);";
+  const values = [username, hash, email]
+
+  db.any(query, values)
+    .then((data) => {
+      //res.redirect("/login");
+      res.status(200).json({ message: 'Success'})
+    })
+    .catch(function (err) {
+      res.status(200).json({ message: 'Invalid input'})
+    });
 });
 
 app.post('/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
-  const query = `SELECT * FROM users WHERE username = 'abcd';`;
-  db.one(query)
+  const query = `SELECT * FROM users WHERE username = $1;`;
+  const values = [username];
+  db.one(query, values)
     .then((data) => {
       user.username = data.username;
       user.password = data.password;
-      if (bcrypt.compare('abcd1234', user.password)){
+      if (bcrypt.compare(password, user.password)){
         req.session.user = user;
         req.session.save();
-        console.log("works!", user.password); //prints works! if we are able to log in.
-        res.redirect("/");
+        //res.redirect("/explore");
+        res.status(200).json({ message: 'Success'})
         
       }
       else{
-        console.log("Incorrect username or password.");
-        res.render('/views/pages/login.ejs',{})
+        //return res.render('pages/login', { message: 'Incorrect username or password' });
+        res.status(200).json({ message: 'Invalid input'})
       }
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/register');
+      //console.log(err);
+      //res.redirect('/register');
+      res.status(200).json({ message: 'Invalid input'})
     });
 });
 
+
+app.get('/explore', (req, res) => {
+  res.render('pages/explore',{});
+});
 
 
 app.get("/logout", (req, res) => {
@@ -148,15 +169,83 @@ app.get("/logout", (req, res) => {
   res.render("pages/login");
 });
 
-
 const auth = (req, res, next) => {
   if (!req.session.user) {
-    return res.redirect("/login");
+    return res.redirect("/register");
   }
   next();
 };
 
 app.use(auth);
+
+app.get("/get_user", (req, res) => {
+  const query = 'SELECT * FROM users WHERE username = $1;';
+
+  db.one(query, [req.query.username]).then(data => {
+    res.status(200).json(data);
+  }).catch(err => {
+    res.status(404).json(err);
+  });
+});
+
+app.get("/get_neighborhood", (req, res) => {
+  db.one(query, [req.query.username]).then(async data => {
+    console.log(`https://maps.googleapis.com/maps/api/geocode/json?address=` + data.address_line1.replaceAll(' ', '\+') + ',+' + data.city + ',+' + data.state + '+' + data.zipcode + '&key=' + process.env.API_KEY);
+    await axios({
+      url: `https://maps.googleapis.com/maps/api/geocode/json?address=` + data.address_line1.replaceAll(' ','\+') + '+' + data.city + '+' + data.state + '&key=' + process.env.API_KEY,
+      method: 'GET'
+    }).then(results => {
+      results.data.results[0].address_components.forEach(elem => {
+        if(elem.types.includes('neighborhood')){
+          res.status(200).json({neighborhood: elem.long_name});
+        } 
+      });
+    }).catch(err => {
+      res.status(404).json(err);
+    });
+  }).catch(err => {
+    res.status(404).json(err);
+  }); 
+});
+
+app.get('/get_reviews', (req, res) => {
+  const property_id = req.query.property_id;
+  const query = 'SELECT subject, description, rating FROM reviews WHERE property_id = $1;';
+
+  db.any(query, [property_id])
+  .then(data => {
+    res.status(200).json(data);
+  })
+  .catch(err => {
+    res.status(404).json(err);
+  });
+});
+
+app.post('/add_review', (req, res) => {
+  const username = req.query.username;
+  const subject = req.query.subject;
+  const description = req.query.description;
+  const rating = req.query.rating;
+  const query = 'INSERT INTO reviews (username, property_id, subject, description, rating) VALUES ($1, $2, $3, $4, $5) returning *;'
+
+  db.task(task => {
+    return task.batch([
+      task.one('SELECT property_id FROM users WHERE username = $1', [username]),
+    ]);
+  })
+  .then(data => {
+    db.any(query, [username,parseInt(data[0].property_id),subject,description,parseInt(rating)])
+    .then(res => {
+      res.status(200).json(res);
+    })
+    .catch(err => {
+      res.status(404).json(err);
+    });
+  })
+  .catch(err => {
+    res.status(404).json(err);
+  });
+});
 
 //TODO - Everything that you need to be logged in for
 
