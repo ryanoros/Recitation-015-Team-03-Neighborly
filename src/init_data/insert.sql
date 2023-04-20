@@ -10,8 +10,4 @@ INSERT INTO properties (property_id, neighborhood_id, address_line1, address_lin
 INSERT INTO properties (property_id, neighborhood_id, address_line1, address_line2, city, state, zipcode) VALUES (2, 1, '8101 KINCROSS WAY', NULL, 'Boulder', 'CO', 80301);
 INSERT INTO properties (property_id, neighborhood_id, address_line1, address_line2, city, state, zipcode) VALUES (3, 1, '3400 MADISON AVE', NULL, 'Boulder', 'CO', 80303);
 INSERT INTO properties (property_id, neighborhood_id, address_line1, address_line2, city, state, zipcode) VALUES (4, 1, '3300 BLUFF ST', NULL, 'Boulder', 'CO', 80301);
-<<<<<<< HEAD
 INSERT INTO properties (property_id, neighborhood_id, address_line1, address_line2, city, state, zipcode) VALUES (5, 1, '1300 5TH ST', NULL, 'Boulder', 'CO', 80302);
-=======
-INSERT INTO properties (property_id, neighborhood_id, address_line1, address_line2, city, state, zipcode) VALUES (5, 1, '1300 5TH ST', NULL, 'Boulder', 'CO', 80302);
->>>>>>> main
