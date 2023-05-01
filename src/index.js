@@ -127,7 +127,7 @@ app.get("/login", (req, res) => {
   return res.render("pages/login");
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
   const query = "select * from users where users.username = $1";
@@ -135,7 +135,11 @@ app.post("/login", (req, res) => {
   // get the student_id based on the emailid
   
   db.one(query, [username])
+<<<<<<< HEAD
     .then((data) => {
+=======
+    .then( async (data) => {
+>>>>>>> main
       user.username = data.username;
       user.property_id = data.property_id;
       user.password = data.password;
@@ -147,8 +151,8 @@ app.post("/login", (req, res) => {
       user.birthdate = data.birthdate;
 
       // check if password from request matches with password in DB
-      const match = bcrypt.compare(password, user.password)
-      if (!match) res.render('pages/login', {error:true,message:"Incorrect password"});
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) res.render('pages/login', {error:true, message:"Incorrect password"});
 
       req.session.user = user;
       req.session.save();
@@ -675,6 +679,7 @@ app.post('/addInterests', (req, res) => {
       });
     });
 })
+
 app.get('/applications', (req, res) => {
   const query_users = 'SELECT a.application_id, p.address_line1, l.price, a.datetime FROM applications AS a RIGHT JOIN listing AS l ON a.listing_id = l.listing_id INNER JOIN properties AS p ON a.property_id = p.property_id WHERE a.username = $1';
   const query_listing = 'SELECT a.application_id, users.first_name, users.last_name, users.email, a.datetime FROM listing AS l LEFT JOIN applications AS a ON l.listing_id = a.listing_id INNER JOIN users ON users.username = a.username WHERE l.username = $1';
